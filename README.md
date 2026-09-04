@@ -85,8 +85,8 @@ endpoint plan, and the SQL script, and that a root-level `README.md` exists.
 
 **CI/CD green build screenshot:**
 
-> _[Insert screenshot of the successful green GitHub Actions run here before
-> submission.]_
+<img width="1509" height="432" alt="ci work" src="https://github.com/user-attachments/assets/68b94b47-7bec-4cf1-a5ab-ee7381ad673d" />
+
 
 ## 7. Video Walkthrough
 
