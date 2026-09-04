@@ -1,6 +1,5 @@
 
-/* ============================================================
-   RaceDay Database Script
+/*RaceDay Database Script
    Module: PROG6212/w - Programming 2B
    Part 1: System Planning and Database
 
@@ -10,8 +9,7 @@
 
    Run this script against a new, empty database. It has been
    tested to run cleanly from scratch (drops existing tables
-   first so it is safely re-runnable during development).
-   ============================================================ */
+   first so it is safely re-runnable during development).*/
 
 IF DB_ID('RaceDayDb') IS NULL
 BEGIN
@@ -22,10 +20,8 @@ GO
 USE RaceDayDb;
 GO
 
-/* ------------------------------------------------------------
-   Drop tables if they already exist (child tables first) so
-   this script can be re-run cleanly during development.
-   ------------------------------------------------------------ */
+/* Drop tables if they already exist (child tables first) so
+   this script can be re-run cleanly during development. */
 IF OBJECT_ID('dbo.Results', 'U') IS NOT NULL DROP TABLE dbo.Results;
 IF OBJECT_ID('dbo.Enrolments', 'U') IS NOT NULL DROP TABLE dbo.Enrolments;
 IF OBJECT_ID('dbo.Routes', 'U') IS NOT NULL DROP TABLE dbo.Routes;
@@ -34,11 +30,9 @@ IF OBJECT_ID('dbo.Events', 'U') IS NOT NULL DROP TABLE dbo.Events;
 IF OBJECT_ID('dbo.Users', 'U') IS NOT NULL DROP TABLE dbo.Users;
 GO
 
-/* ============================================================
-   1. Users
+/* 1. Users
    Stores both Organisers and Participants. The Role column
-   distinguishes the two, avoiding duplicate account tables.
-   ============================================================ */
+   distinguishes the two, avoiding duplicate account tables. */
 CREATE TABLE dbo.Users
 (
     UserId              INT IDENTITY(1,1)   NOT NULL,
@@ -56,10 +50,8 @@ CREATE TABLE dbo.Users
 );
 GO
 
-/* ============================================================
-   2. Events
-   Created and managed by an Organiser.
-   ============================================================ */
+/*2. Events
+   Created and managed by an Organiser.*/
 CREATE TABLE dbo.Events
 (
     EventId         INT IDENTITY(1,1)  NOT NULL,
@@ -80,10 +72,8 @@ CREATE TABLE dbo.Events
 );
 GO
 
-/* ============================================================
-   3. Categories
-   Age or distance categories defined per event.
-   ============================================================ */
+/* 3. Categories
+   Age or distance categories defined per event.*/
 CREATE TABLE dbo.Categories
 (
     CategoryId  INT IDENTITY(1,1)  NOT NULL,
@@ -99,12 +89,10 @@ CREATE TABLE dbo.Categories
 );
 GO
 
-/* ============================================================
-   4. Routes
+/* 4. Routes
    Route and elevation information participants use to prepare
    for race day. One event can have more than one route
-   (e.g. a 10km route and a 21km route).
-   ============================================================ */
+   (e.g. a 10km route and a 21km route). */
 CREATE TABLE dbo.Routes
 (
     RouteId         INT IDENTITY(1,1)  NOT NULL,
@@ -121,10 +109,8 @@ CREATE TABLE dbo.Routes
 );
 GO
 
-/* ============================================================
-   5. Enrolments
-   Links a Participant to an Event and the Category they chose.
-   ============================================================ */
+/* 5. Enrolments
+   Links a Participant to an Event and the Category they chose.*/
 CREATE TABLE dbo.Enrolments
 (
     EnrolmentId     INT IDENTITY(1,1)  NOT NULL,
@@ -146,11 +132,9 @@ CREATE TABLE dbo.Enrolments
 );
 GO
 
-/* ============================================================
-   6. Results
+/*6. Results
    Captured by the Organiser after the event concludes.
-   One-to-one with Enrolments.
-   ============================================================ */
+   One-to-one with Enrolments.*/
 CREATE TABLE dbo.Results
 (
     ResultId        INT IDENTITY(1,1)  NOT NULL,
@@ -167,21 +151,19 @@ CREATE TABLE dbo.Results
 );
 GO
 
-/* ============================================================
-   SEED DATA
+/* SEED DATA
    2 Organisers, 2 Participants, 3 Events, categories per event,
-   sample routes, enrolments and results.
-   ============================================================ */
+   sample routes, enrolments and results. */
 
 -- Users: 2 Organisers, 2 Participants
 -- NOTE: PasswordHash values below are placeholder BCrypt-style
 -- hashes for seed/demo purposes only, not real password hashes.
 INSERT INTO dbo.Users (FullName, Email, PasswordHash, Role, PhoneNumber)
 VALUES
-('Thandiwe Nkosi',  'thandiwe.organiser@raceday.co.za', '$2a$11$SEEDHASH0000000000000000000000000000000000000000001', 'Organiser',   '0821112222'),
-('Johan van der Merwe', 'johan.organiser@raceday.co.za',  '$2a$11$SEEDHASH0000000000000000000000000000000000000000002', 'Organiser',   '0823334444'),
-('Lindiwe Dube',     'lindiwe.participant@raceday.co.za', '$2a$11$SEEDHASH0000000000000000000000000000000000000000003', 'Participant', '0825556666'),
-('Sipho Mahlangu',   'sipho.participant@raceday.co.za',   '$2a$11$SEEDHASH0000000000000000000000000000000000000000004', 'Participant', '0827778888');
+('Thandiwe Nkosi',  'thandiwe.organiser@raceday.co.za', '$2a$11$SEEDHASH0001', 'Organiser',   '0821112222'),
+('Johan van der Merwe', 'johan.organiser@raceday.co.za',  '$2a$11$SEEDHASH0002', 'Organiser',   '0823334444'),
+('Lindiwe Dube',     'lindiwe.participant@raceday.co.za', '$2a$11$SEEDHASH0003', 'Participant', '0825556666'),
+('Sipho Mahlangu',   'sipho.participant@raceday.co.za',   '$2a$11$SEEDHASH0004', 'Participant', '0827778888');
 
 -- Events (2 by Thandiwe (UserId 1), 1 by Johan (UserId 2))
 INSERT INTO dbo.Events (OrganiserId, Name, Description, EventDate, Location, DistanceKm, EventType)
