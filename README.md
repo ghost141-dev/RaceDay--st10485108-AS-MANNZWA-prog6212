@@ -90,7 +90,7 @@ endpoint plan, and the SQL script, and that a root-level `README.md` exists.
 
 ## 7. Video Walkthrough
 
-**YouTube (unlisted) link:** https://www.youtube.com/@Amosghost
+**YouTube link:** https://www.youtube.com/@Amosghost
 
 The video walks through:
 - The planning documents in `/docs`.
