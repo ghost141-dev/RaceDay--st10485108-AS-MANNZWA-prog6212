@@ -49,7 +49,7 @@ CREATE TABLE dbo.Users
 );
 GO
 
-/*2. Events
+/* 2. Events
    Created and managed by an Organiser. */
 CREATE TABLE dbo.Events
 (
@@ -67,7 +67,8 @@ CREATE TABLE dbo.Events
     CONSTRAINT PK_Events PRIMARY KEY (EventId),
     CONSTRAINT FK_Events_Organiser FOREIGN KEY (OrganiserId)
         REFERENCES dbo.Users (UserId),
-    CONSTRAINT CK_Events_Type CHECK (EventType IN ('Run', 'Walk', 'Cycle'))
+    CONSTRAINT CK_Events_Type CHECK (EventType IN ('Run', 'Walk', 'Cycle')),
+    CONSTRAINT CK_Events_DistancePositive CHECK (DistanceKm > 0)
 );
 GO
 
@@ -84,11 +85,14 @@ CREATE TABLE dbo.Categories
 
     CONSTRAINT PK_Categories PRIMARY KEY (CategoryId),
     CONSTRAINT FK_Categories_Events FOREIGN KEY (EventId)
-        REFERENCES dbo.Events (EventId)
+        REFERENCES dbo.Events (EventId) ON DELETE CASCADE,
+    CONSTRAINT UQ_Categories_EventName UNIQUE (EventId, Name),
+    CONSTRAINT CK_Categories_AgeRange CHECK (MinAge IS NULL OR MaxAge IS NULL OR MinAge <= MaxAge),
+    CONSTRAINT CK_Categories_DistancePositive CHECK (DistanceKm IS NULL OR DistanceKm > 0)
 );
 GO
 
-/*4. Routes
+/* 4. Routes
    Route and elevation information participants use to prepare
    for race day. One event can have more than one route
    (e.g. a 10km route and a 21km route). */
@@ -104,11 +108,12 @@ CREATE TABLE dbo.Routes
 
     CONSTRAINT PK_Routes PRIMARY KEY (RouteId),
     CONSTRAINT FK_Routes_Events FOREIGN KEY (EventId)
-        REFERENCES dbo.Events (EventId)
+        REFERENCES dbo.Events (EventId) ON DELETE CASCADE,
+    CONSTRAINT CK_Routes_ElevationNonNegative CHECK (ElevationGainM IS NULL OR ElevationGainM >= 0)
 );
 GO
 
-/*5. Enrolments
+/* 5. Enrolments
    Links a Participant to an Event and the Category they chose.*/
 CREATE TABLE dbo.Enrolments
 (
@@ -131,7 +136,7 @@ CREATE TABLE dbo.Enrolments
 );
 GO
 
-/*6. Results
+/* 6. Results
    Captured by the Organiser after the event concludes.
    One-to-one with Enrolments.*/
 CREATE TABLE dbo.Results
@@ -145,12 +150,15 @@ CREATE TABLE dbo.Results
 
     CONSTRAINT PK_Results PRIMARY KEY (ResultId),
     CONSTRAINT FK_Results_Enrolments FOREIGN KEY (EnrolmentId)
-        REFERENCES dbo.Enrolments (EnrolmentId),
-    CONSTRAINT UQ_Results_Enrolment UNIQUE (EnrolmentId)
+        REFERENCES dbo.Enrolments (EnrolmentId) ON DELETE CASCADE,
+    CONSTRAINT UQ_Results_Enrolment UNIQUE (EnrolmentId),
+    CONSTRAINT CK_Results_PositionPositive CHECK (FinishPosition > 0),
+    CONSTRAINT CK_Results_TotalPositive CHECK (TotalFinishers > 0),
+    CONSTRAINT CK_Results_PositionWithinTotal CHECK (FinishPosition <= TotalFinishers)
 );
 GO
 
-/*SEED DATA
+/* SEED DATA
    2 Organisers, 2 Participants, 3 Events, categories per event,
    sample routes, enrolments and results. */
 
@@ -159,33 +167,33 @@ GO
 -- hashes for seed/demo purposes only, not real password hashes.
 INSERT INTO dbo.Users (FullName, Email, PasswordHash, Role, PhoneNumber)
 VALUES
-('Thandiwe Nkosi',  'thandiwe.organiser@raceday.co.za', '$2a$11$SEEDHASH0001', 'Organiser',   '0821112222'),
-('Johan van der Merwe', 'johan.organiser@raceday.co.za',  '$2a$11$SEEDHASH0002', 'Organiser',   '0823334444'),
-('Lindiwe Dube',     'lindiwe.participant@raceday.co.za', '$2a$11$SEEDHASH00003', 'Participant', '0825556666'),
-('Sipho Mahlangu',   'sipho.participant@raceday.co.za',   '$2a$11$SEEDHASH0004', 'Participant', '0827778888');
+('Thandiwe Nkosi',      'thandiwe.organiser@raceday.co.za',   '$2a$11$SEEDHASH0001', 'Organiser',   '0821112222'),
+('Johan van der Merwe',  'johan.organiser@raceday.co.za',      '$2a$11$SEEDHASH0002', 'Organiser',   '0823334444'),
+('Lindiwe Dube',         'lindiwe.participant@raceday.co.za',  '$2a$11$SEEDHASH0003', 'Participant', '0825556666'),
+('Sipho Mahlangu',       'sipho.participant@raceday.co.za',    '$2a$11$SEEDHASH0004', 'Participant', '0827778888');
 
 -- Events (2 by Thandiwe (UserId 1), 1 by Johan (UserId 2))
 INSERT INTO dbo.Events (OrganiserId, Name, Description, EventDate, Location, DistanceKm, EventType)
 VALUES
-(1, 'Joburg City 10K',      'A fast, flat 10km road run through the Johannesburg CBD.', '2026-03-14 07:00', 'Johannesburg, Gauteng',   10.0, 'Run'),
-(1, 'Soweto Community Walk', 'A family-friendly charity walk supporting local schools.', '2026-04-05 08:00', 'Soweto, Gauteng',         5.0,  'Walk'),
-(2, 'Cape Winelands Cycle Tour', 'A scenic road cycling tour through the Cape Winelands.', '2026-05-10 06:30', 'Stellenbosch, Western Cape', 94.7, 'Cycle');
+(1, 'Joburg City 10K',          'A fast, flat 10km road run through the Johannesburg CBD.', '2026-03-14 07:00', 'Johannesburg, Gauteng',       10.0, 'Run'),
+(1, 'Soweto Community Walk',    'A family-friendly charity walk supporting local schools.', '2026-04-05 08:00', 'Soweto, Gauteng',             5.0,  'Walk'),
+(2, 'Cape Winelands Cycle Tour','A scenic road cycling tour through the Cape Winelands.',    '2026-05-10 06:30', 'Stellenbosch, Western Cape', 94.7, 'Cycle');
 
 -- Categories per event
 INSERT INTO dbo.Categories (EventId, Name, MinAge, MaxAge, DistanceKm)
 VALUES
-(1, '10km Open',      18,  NULL, 10.0),
-(1, 'Under 20',       13,  19,   10.0),
-(1, 'Senior (60+)',   60,  NULL, 10.0),
-(2, '5km Family Walk', NULL, NULL, 5.0),
-(3, '94.7km Individual', 18, NULL, 94.7),
-(3, '94.7km Team Relay', 18, NULL, 94.7);
+(1, '10km Open',         18,   NULL, 10.0),
+(1, 'Under 20',          13,   19,   10.0),
+(1, 'Senior (60+)',      60,   NULL, 10.0),
+(2, '5km Family Walk',   NULL, NULL, 5.0),
+(3, '94.7km Individual', 18,   NULL, 94.7),
+(3, '94.7km Team Relay', 18,   NULL, 94.7);
 
 -- Routes
 INSERT INTO dbo.Routes (EventId, StartPoint, EndPoint, ElevationGainM, Notes)
 VALUES
-(1, 'Mary Fitzgerald Square', 'Constitution Hill', 85.0,  'Mostly flat with one incline near the finish.'),
-(2, 'Soweto Theatre',         'Freedom Square',    40.0,  'Suitable for wheelchairs and prams.'),
+(1, 'Mary Fitzgerald Square', 'Constitution Hill', 85.0,   'Mostly flat with one incline near the finish.'),
+(2, 'Soweto Theatre',         'Freedom Square',    40.0,   'Suitable for wheelchairs and prams.'),
 (3, 'Stellenbosch Square',    'Franschhoek Pass',  1120.0, 'Includes the Helshoogte Pass climb - bring water.');
 
 -- Enrolments (Participants entering events)
@@ -198,6 +206,133 @@ VALUES
 -- Results (captured after the event concludes)
 INSERT INTO dbo.Results (EnrolmentId, FinishTime, FinishPosition, TotalFinishers)
 VALUES
-(1, '00:48:32', 47, 312),
+(1, '00:48:32', 47,  312),
 (2, '00:52:10', 118, 312);
+GO
+
+/* SELECT STATEMENTS
+   Verifies the schema was created and seeded correctly. */
+
+-- 1. Basic table checks
+SELECT * FROM dbo.Users;
+SELECT * FROM dbo.Events;
+SELECT * FROM dbo.Categories;
+SELECT * FROM dbo.Routes;
+SELECT * FROM dbo.Enrolments;
+SELECT * FROM dbo.Results;
+GO
+
+-- 2. Users split by role
+SELECT UserId, FullName, Email, Role, PhoneNumber
+FROM dbo.Users
+WHERE Role = 'Organiser';
+
+SELECT UserId, FullName, Email, Role, PhoneNumber
+FROM dbo.Users
+WHERE Role = 'Participant';
+GO
+
+-- 3. Events with their Organiser's name
+SELECT
+    e.EventId,
+    e.Name          AS EventName,
+    e.EventType,
+    e.EventDate,
+    e.Location,
+    e.DistanceKm,
+    u.FullName      AS OrganisedBy
+FROM dbo.Events e
+JOIN dbo.Users u ON u.UserId = e.OrganiserId
+ORDER BY e.EventDate;
+GO
+
+-- 4. Categories for each event
+SELECT
+    ev.Name         AS EventName,
+    c.Name          AS CategoryName,
+    c.MinAge,
+    c.MaxAge,
+    c.DistanceKm
+FROM dbo.Categories c
+JOIN dbo.Events ev ON ev.EventId = c.EventId
+ORDER BY ev.Name, c.Name;
+GO
+
+-- 5. Routes for each event
+SELECT
+    ev.Name         AS EventName,
+    r.StartPoint,
+    r.EndPoint,
+    r.ElevationGainM,
+    r.Notes
+FROM dbo.Routes r
+JOIN dbo.Events ev ON ev.EventId = r.EventId
+ORDER BY ev.Name;
+GO
+
+-- 6. Full enrolment detail: who enrolled, for what event/category, and status
+SELECT
+    en.EnrolmentId,
+    p.FullName      AS Participant,
+    ev.Name         AS EventName,
+    c.Name          AS Category,
+    en.Status,
+    en.EnrolledAt
+FROM dbo.Enrolments en
+JOIN dbo.Users p       ON p.UserId  = en.ParticipantId
+JOIN dbo.Events ev     ON ev.EventId = en.EventId
+JOIN dbo.Categories c  ON c.CategoryId = en.CategoryId
+ORDER BY en.EnrolledAt;
+GO
+
+-- 7. Enrolments still pending confirmation
+SELECT
+    en.EnrolmentId,
+    p.FullName      AS Participant,
+    ev.Name         AS EventName,
+    en.Status
+FROM dbo.Enrolments en
+JOIN dbo.Users p   ON p.UserId  = en.ParticipantId
+JOIN dbo.Events ev ON ev.EventId = en.EventId
+WHERE en.Status = 'Pending';
+GO
+
+-- 8. Full results: participant, event, category, and finish detail
+SELECT
+    p.FullName      AS Participant,
+    ev.Name         AS EventName,
+    c.Name          AS Category,
+    r.FinishTime,
+    r.FinishPosition,
+    r.TotalFinishers,
+    r.CapturedAt
+FROM dbo.Results r
+JOIN dbo.Enrolments en ON en.EnrolmentId = r.EnrolmentId
+JOIN dbo.Users p       ON p.UserId  = en.ParticipantId
+JOIN dbo.Events ev     ON ev.EventId = en.EventId
+JOIN dbo.Categories c  ON c.CategoryId = en.CategoryId
+ORDER BY r.FinishPosition;
+GO
+
+-- 9. Enrolments that have NOT yet had a result captured
+SELECT
+    en.EnrolmentId,
+    p.FullName      AS Participant,
+    ev.Name         AS EventName,
+    en.Status
+FROM dbo.Enrolments en
+JOIN dbo.Users p   ON p.UserId  = en.ParticipantId
+JOIN dbo.Events ev ON ev.EventId = en.EventId
+LEFT JOIN dbo.Results r ON r.EnrolmentId = en.EnrolmentId
+WHERE r.ResultId IS NULL;
+GO
+
+-- 10. Enrolment count per event
+SELECT
+    ev.Name               AS EventName,
+    COUNT(en.EnrolmentId) AS TotalEnrolments
+FROM dbo.Events ev
+LEFT JOIN dbo.Enrolments en ON en.EventId = ev.EventId
+GROUP BY ev.Name
+ORDER BY TotalEnrolments DESC;
 GO
